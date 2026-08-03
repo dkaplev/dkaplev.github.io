@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DentPay — Production pay without the Friday spreadsheet</title>
+  <meta name="description" content="Turn Open Dental and Dentrix production exports into clean associate and hygienist pay. Review exceptions. Approve in minutes." />
+  <meta property="og:title" content="DentPay" />
+  <meta property="og:description" content="Open Dental / Dentrix production pay — without the Friday spreadsheet." />
+  <meta property="og:url" content="https://dentpay.tech" />
+  <link rel="canonical" href="https://dentpay.tech/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f3f0ea;
+      --bg-deep: #ebe6dc;
+      --ink: #1c1a17;
+      --muted: #6b655c;
+      --line: rgba(28, 26, 23, 0.1);
+      --panel: #fffdf9;
+      --accent: #0f6e6a;
+      --accent-soft: #d8efed;
+      --warn: #c45c26;
+      --ok: #1f7a4c;
+      --shadow: 0 24px 60px rgba(28, 26, 23, 0.1);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: "Manrope", ui-sans-serif, system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 80% -10%, #e7f3f1 0%, transparent 55%),
+        radial-gradient(900px 500px at -10% 20%, #f7efe4 0%, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    .wrap {
+      width: min(1120px, calc(100% - 2.5rem));
+      margin: 0 auto;
+    }
+
+    /* Nav */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.35rem 0 0.5rem;
+      animation: rise 0.7s ease both;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      font-size: 1.05rem;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #147f7a, #0b5552);
+      display: grid;
+      place-items: center;
+      color: #f7fffe;
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 650;
+      font-size: 1.05rem;
+      box-shadow: 0 8px 20px rgba(15, 110, 106, 0.28);
+    }
+
+    .nav-cta {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent);
+      padding: 0.55rem 0.95rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 110, 106, 0.22);
+      background: rgba(255, 253, 249, 0.7);
+      backdrop-filter: blur(8px);
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .nav-cta:hover { background: #fff; transform: translateY(-1px); }
+
+    /* Hero */
+    .hero {
+      padding: 2.5rem 0 3.5rem;
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 2.75rem;
+      align-items: center;
+      min-height: calc(100vh - 5.5rem);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.1rem;
+      animation: rise 0.75s ease both;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-weight: 650;
+      font-size: clamp(2.45rem, 5vw, 3.85rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      max-width: 11ch;
+      margin-bottom: 1.15rem;
+      animation: rise 0.85s ease 0.05s both;
+    }
+
+    .lede {
+      font-size: 1.08rem;
+      color: var(--muted);
+      max-width: 34ch;
+      margin-bottom: 1.75rem;
+      animation: rise 0.9s ease 0.1s both;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      animation: rise 0.95s ease 0.15s both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      border: none;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 999px;
+      padding: 0.9rem 1.35rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--ink);
+      color: #faf7f2;
+      box-shadow: 0 12px 28px rgba(28, 26, 23, 0.18);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px rgba(28, 26, 23, 0.22);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .btn-ghost:hover { color: var(--ink); background: rgba(255,255,255,0.55); }
+
+    .trust {
+      font-size: 0.86rem;
+      color: var(--muted);
+      animation: rise 1s ease 0.2s both;
+    }
+
+    .trust strong { color: var(--ink); font-weight: 600; }
+
+    /* Product stage */
+    .stage {
+      position: relative;
+      animation: rise 1s ease 0.12s both;
+    }
+
+    .stage-frame {
+      background:
+        linear-gradient(160deg, rgba(255,255,255,0.55), rgba(255,255,255,0.15)),
+        linear-gradient(180deg, #dcebe8 0%, #c5ddd9 45%, #b7cfc4 100%);
+      border-radius: calc(var(--radius) + 8px);
+      padding: 1.6rem 1.4rem 1.8rem;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.55);
+      overflow: hidden;
+      position: relative;
+      min-height: 420px;
+    }
+
+    .stage-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(255,255,255,0.45), transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(15, 110, 106, 0.12), transparent 45%);
+      pointer-events: none;
+    }
+
+    .stage-caption {
+      position: relative;
+      z-index: 1;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      color: #123834;
+      max-width: 14ch;
+      margin: 0.2rem 0 1.25rem 0.35rem;
+      line-height: 1.15;
+    }
+
+    .panel {
+      position: relative;
+      z-index: 1;
+      background: var(--panel);
+      border-radius: 18px;
+      border: 1px solid rgba(28, 26, 23, 0.06);
+      box-shadow: 0 18px 40px rgba(18, 40, 38, 0.14);
+      overflow: hidden;
+      transform: translateY(0);
+      animation: floaty 6s ease-in-out infinite;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: #fbfaf7;
+    }
+
+    .panel-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.28rem 0.55rem;
+      border-radius: 999px;
+      background: #e8f6ee;
+      color: var(--ok);
+    }
+
+    .rows { padding: 0.35rem 0.55rem 0.7rem; }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr 0.7fr;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.7rem 0.55rem;
+      border-radius: 12px;
+      font-size: 0.82rem;
+    }
+
+    .row + .row { margin-top: 0.15rem; }
+    .row.warn { background: #fff4ec; }
+    .row.ok { background: #f4faf6; }
+
+    .name { font-weight: 650; }
+    .meta { color: var(--muted); font-size: 0.74rem; margin-top: 0.1rem; }
+    .amt { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+    .flag {
+      justify-self: end;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--warn);
+      background: #ffe8d8;
+      padding: 0.22rem 0.45rem;
+      border-radius: 999px;
+    }
+    .flag.good {
+      color: var(--ok);
+      background: #dff3e7;
+    }
+
+    .panel-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.85rem 1rem 1rem;
+      border-top: 1px solid var(--line);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .approve {
+      background: var(--accent);
+      color: #f4fffe;
+      border: none;
+      border-radius: 999px;
+      padding: 0.45rem 0.85rem;
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Steps */
+    .steps {
+      padding: 0 0 4.5rem;
+      animation: rise 1s ease 0.25s both;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .step {
+      padding: 1.25rem 1.2rem 1.35rem;
+      border-radius: 20px;
+      background: rgba(255, 253, 249, 0.72);
+      border: 1px solid var(--line);
+    }
+
+    .step-num {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 1.35rem;
+      color: var(--accent);
+      margin-bottom: 0.55rem;
+    }
+
+    .step h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .step p {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    /* Numbers example */
+    .example {
+      padding: 0 0 4.5rem;
+    }
+
+    .example-head {
+      max-width: 40rem;
+      margin-bottom: 1.35rem;
+    }
+
+    .example-head h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 0.55rem;
+    }
+
+    .example-head p {
+      color: var(--muted);
+      font-size: 0.98rem;
+      max-width: 46ch;
+    }
+
+    .trace {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .trace-step {
+      background: rgba(255, 253, 249, 0.85);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 1.1rem 1.2rem 1.2rem;
+    }
+
+    .trace-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+
+    .trace-step h3 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .trace-step p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .math {
+      display: grid;
+      gap: 0.45rem;
+      font-size: 0.86rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .math-row {
+      display: grid;
+      grid-template-columns: 1.4fr auto auto;
+      gap: 0.75rem;
+      align-items: baseline;
+      padding: 0.55rem 0.65rem;
+      border-radius: 10px;
+      background: #f7f4ee;
+    }
+
+    .math-row.bad { background: #fff4ec; }
+    .math-row.fix { background: #eef8f2; }
+
+    .math-row .who { font-weight: 650; color: var(--ink); }
+    .math-row .calc { color: var(--muted); text-align: right; }
+    .math-row .pay { font-weight: 700; text-align: right; color: var(--ink); }
+    .math-row.bad .pay { color: var(--warn); }
+    .math-row.fix .pay { color: var(--ok); }
+
+    .delta {
+      margin-top: 0.75rem;
+      font-size: 0.88rem;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .delta span { color: var(--warn); }
+
+    /* CTA band */
+    .cta {
+      padding: 0 0 4.5rem;
+    }
+
+    .cta-inner {
+      border-radius: calc(var(--radius) + 4px);
+      background: var(--ink);
+      color: #f7f3ec;
+      padding: clamp(1.75rem, 4vw, 2.75rem);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 1.75rem;
+      align-items: center;
+      box-shadow: var(--shadow);
+    }
+
+    .cta h2 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.7rem, 3vw, 2.25rem);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 0.55rem;
+    }
+
+    .cta p { color: rgba(247, 243, 236, 0.72); max-width: 36ch; }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+    }
+
+    input[type="email"],
+    input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      border-radius: 999px;
+      padding: 0.85rem 1.05rem;
+      font: inherit;
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    input::placeholder { color: rgba(247, 243, 236, 0.45); }
+
+    input:focus {
+      border-color: rgba(216, 239, 237, 0.55);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .btn-light {
+      background: #f7f3ec;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .btn-light:hover { transform: translateY(-1px); }
+
+    .form-note {
+      font-size: 0.78rem;
+      color: rgba(247, 243, 236, 0.5);
+    }
+
+    .form-status {
+      display: none;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      padding: 0.85rem 1rem;
+      border-radius: 14px;
+    }
+
+    .form-status.show { display: block; }
+
+    .form-status.ok {
+      background: rgba(31, 122, 76, 0.22);
+      color: #d8f5e4;
+      border: 1px solid rgba(216, 245, 228, 0.25);
+    }
+
+    .form-status.err {
+      background: rgba(196, 92, 38, 0.22);
+      color: #ffd9c4;
+      border: 1px solid rgba(255, 217, 196, 0.25);
+    }
+
+    .hp {
+      position: absolute;
+      left: -10000px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    .btn[disabled] {
+      opacity: 0.65;
+      cursor: wait;
+      transform: none;
+    }
+
+    footer {
+      padding: 0 0 2.25rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      padding-top: 1.35rem;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    @media (max-width: 900px) {
+      .hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding-top: 1.75rem;
+        gap: 2rem;
+      }
+      h1 { max-width: 14ch; }
+      .lede { max-width: 40ch; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .cta-inner { grid-template-columns: 1fr; }
+      .stage-frame { min-height: 0; }
+      .math-row {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+      }
+      .math-row .calc,
+      .math-row .pay { text-align: left; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="nav">
+      <a class="brand" href="/">
+        <span class="mark" aria-hidden="true">D</span>
+        DentPay
+      </a>
+      <a class="nav-cta" href="#early-access">Get early access</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">For Open Dental &amp; Dentrix practices</p>
+          <h1>DentPay</h1>
+          <p class="lede">
+            Turn production exports into clean associate &amp; hygienist pay —
+            without the Friday spreadsheet.
+          </p>
+          <div class="actions">
+            <a class="btn btn-primary" href="#early-access">Join the pilot</a>
+            <a class="btn btn-ghost" href="#example">See the numbers</a>
+          </div>
+          <p class="trust">
+            Built for office managers who still reconcile <strong>% production</strong>,
+            lab fees, and write-offs in Excel every pay period.
+          </p>
+        </div>
+
+        <div class="stage" aria-hidden="true">
+          <div class="stage-frame">
+            <p class="stage-caption">Approve pay in minutes, not hours.</p>
+            <div class="panel">
+              <div class="panel-head">
+                <span class="panel-title">Pay period · Mar 1–15</span>
+                <span class="badge">3 flags</span>
+              </div>
+              <div class="rows">
+                <div class="row ok">
+                  <div>
+                    <div class="name">Dr. Patel</div>
+                    <div class="meta">35% production · after labs</div>
+                  </div>
+                  <div class="amt">$8,420</div>
+                  <span class="flag good">Clear</span>
+                </div>
+                <div class="row warn">
+                  <div>
+                    <div class="name">Dr. Nguyen</div>
+                    <div class="meta">Lab fee mismatch vs invoice</div>
+                  </div>
+                  <div class="amt">$6,110</div>
+                  <span class="flag">Review</span>
+                </div>
+                <div class="row warn">
+                  <div>
+                    <div class="name">Hyg. Morales</div>
+                    <div class="meta">Write-off above contract cap</div>
+                  </div>
+                  <div class="amt">$2,845</div>
+                  <span class="flag">Review</span>
+                </div>
+              </div>
+              <div class="panel-foot">
+                <span>Rules matched · export to Gusto ready</span>
+                <button class="approve" type="button">Approve pack</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="steps" id="how">
+        <div class="steps-grid">
+          <article class="step">
+            <div class="step-num">01</div>
+            <h3>Import the report</h3>
+            <p>Upload Open Dental Provider Payroll or Dentrix production exports. CSV first — no rip-and-replace.</p>
+          </article>
+          <article class="step">
+            <div class="step-num">02</div>
+            <h3>Apply your pay rules</h3>
+            <p>Per-provider splits, lab fees, card fees, and write-offs — configured once, reused every period.</p>
+          </article>
+          <article class="step">
+            <div class="step-num">03</div>
+            <h3>Approve the exceptions</h3>
+            <p>Review flagged anomalies, then export a clean approval pack to Gusto, ADP, or payroll.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="example" id="example">
+        <div class="example-head">
+          <h2>One pay period, with numbers.</h2>
+          <p>
+            A 3-provider Open Dental practice. Pay period Mar 1–15.
+            Follow the dollars from the export to the paycheck error — then to the fix.
+          </p>
+        </div>
+
+        <div class="trace">
+          <article class="trace-step">
+            <div class="trace-label">01 · Origin</div>
+            <h3>Open Dental Provider Payroll export</h3>
+            <p>
+              Production totals look clean. They are not paycheck-ready — labs and write-off caps still live in the contract, not in the export.
+            </p>
+            <div class="math" aria-label="Production export totals">
+              <div class="math-row">
+                <span class="who">Dr. Patel</span>
+                <span class="calc">Production $24,057</span>
+                <span class="pay">raw</span>
+              </div>
+              <div class="math-row">
+                <span class="who">Dr. Nguyen</span>
+                <span class="calc">Production $20,457 · labs in OD $2,650</span>
+                <span class="pay">raw</span>
+              </div>
+              <div class="math-row">
+                <span class="who">Hyg. Morales</span>
+                <span class="calc">Production $9,227 · write-offs $480</span>
+                <span class="pay">raw</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="trace-step">
+            <div class="trace-label">02 · The Friday spreadsheet</div>
+            <h3>Contracts applied by hand — two silent mistakes</h3>
+            <p>
+              Patel is fine. Nguyen’s lab invoice is $3,100 (OD showed $2,650). Morales’s contract caps write-off deductions at $200 — the sheet deducted all $480.
+            </p>
+            <div class="math" aria-label="Spreadsheet paycheck errors">
+              <div class="math-row">
+                <span class="who">Dr. Patel · 35% after labs</span>
+                <span class="calc">$24,057 × 35%</span>
+                <span class="pay">$8,420</span>
+              </div>
+              <div class="math-row bad">
+                <span class="who">Dr. Nguyen · used OD labs $2,650</span>
+                <span class="calc">($20,457 − $2,650) × 35%</span>
+                <span class="pay">$6,232</span>
+              </div>
+              <div class="math-row bad">
+                <span class="who">Hyg. Morales · deducted all write-offs</span>
+                <span class="calc">($9,227 − $480) × 33%</span>
+                <span class="pay">$2,886</span>
+              </div>
+            </div>
+            <p class="delta">Paycheck drift this period: Nguyen <span>~$157 high</span> · Morales <span>~$92 low</span> — before anyone notices.</p>
+          </article>
+
+          <article class="trace-step">
+            <div class="trace-label">03 · DentPay</div>
+            <h3>Same rules. Flags only. Approve into Gusto.</h3>
+            <p>
+              Rules saved once. Nguyen’s lab mismatch and Morales’s write-off cap are flagged. Office manager decides in minutes — no formula rebuild.
+            </p>
+            <div class="math" aria-label="DentPay approved pay">
+              <div class="math-row fix">
+                <span class="who">Dr. Patel</span>
+                <span class="calc">Clear</span>
+                <span class="pay">$8,420</span>
+              </div>
+              <div class="math-row fix">
+                <span class="who">Dr. Nguyen · invoice labs $3,100</span>
+                <span class="calc">($20,457 − $3,100) × 35%</span>
+                <span class="pay">$6,075</span>
+              </div>
+              <div class="math-row fix">
+                <span class="who">Hyg. Morales · cap $200 applied</span>
+                <span class="calc">($9,227 − $200) × 33%</span>
+                <span class="pay">$2,978</span>
+              </div>
+            </div>
+            <p class="delta">Export three lines to Gusto. Ritual stays — the spreadsheet does not.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="cta" id="early-access">
+        <div class="cta-inner">
+          <div>
+            <h2>Piloting with US practices on production pay.</h2>
+            <p>Leave your email. We’ll reach out when your stack is a fit — Open Dental or Dentrix, 2–8 providers.</p>
+          </div>
+          <form id="waitlist-form" action="https://formspree.io/f/xjgnyala" method="POST">
+            <input type="hidden" name="product" value="DentPay" />
+            <input type="hidden" name="_subject" value="DentPay early access request" />
+            <input type="text" name="_gotcha" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="form-row">
+              <input id="waitlist-email" type="email" name="email" placeholder="Office manager email" required autocomplete="email" />
+              <button class="btn btn-light" id="waitlist-submit" type="submit">Request access</button>
+            </div>
+            <input type="text" name="practice" placeholder="Practice name (optional)" autocomplete="organization" />
+            <p class="form-note">No spam. Early access for practices ready to ditch the spreadsheet.</p>
+            <div class="form-status" id="waitlist-status" role="status" aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>© <span id="y"></span> DentPay</span>
+      <span>Not affiliated with Open Dental or Dentrix.</span>
+    </footer>
+  </div>
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    (function () {
+      // Formspree endpoint — submissions appear in your Formspree inbox / CSV export.
+      // Create a dedicated DentPay form at https://formspree.io and paste the new ID here if needed.
+      var ENDPOINT = "https://formspree.io/f/xjgnyala";
+
+      var form = document.getElementById("waitlist-form");
+      var statusEl = document.getElementById("waitlist-status");
+      var submitBtn = document.getElementById("waitlist-submit");
+      if (!form) return;
+
+      form.setAttribute("action", ENDPOINT);
+
+      function setStatus(type, message) {
+        statusEl.className = "form-status show " + type;
+        statusEl.textContent = message;
+      }
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        var honeypot = form.querySelector('[name="_gotcha"]');
+        if (honeypot && honeypot.value) return;
+
+        var email = (form.email.value || "").trim();
+        if (!email) {
+          setStatus("err", "Please enter a valid email.");
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Sending…";
+        statusEl.className = "form-status";
+        statusEl.textContent = "";
+
+        var payload = {
+          email: email,
+          practice: (form.practice.value || "").trim(),
+          product: "DentPay",
+          source: "dentpay.tech",
+          _subject: "DentPay early access request"
+        };
+
+        fetch(ENDPOINT, {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        })
+          .then(function (res) {
+            return res.json().then(function (data) {
+              return { ok: res.ok, status: res.status, data: data };
+            }).catch(function () {
+              return { ok: res.ok, status: res.status, data: {} };
+            });
+          })
+          .then(function (result) {
+            if (result.ok) {
+              form.reset();
+              setStatus("ok", "You're on the list. We'll email you when a pilot spot opens.");
+              submitBtn.textContent = "Request access";
+              submitBtn.disabled = false;
+              return;
+            }
+
+            var msg = (result.data && (result.data.error || result.data.message)) ||
+              "Something went wrong. Please try again in a moment.";
+            if (result.status === 403 || /activate|confirm|domain/i.test(String(msg))) {
+              msg = "Form backend needs a one-time activation — check your Formspree email, then try again.";
+            }
+            setStatus("err", msg);
+            submitBtn.textContent = "Request access";
+            submitBtn.disabled = false;
+          })
+          .catch(function () {
+            setStatus("err", "Network error. Check your connection and try again.");
+            submitBtn.textContent = "Request access";
+            submitBtn.disabled = false;
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
